@@ -1,23 +1,25 @@
-import styled from "styled-components";
-import fileIcon from "../../assets/file.png";
-import docIcon from "../../assets/doc.png";
-import { FileNode } from "../../types/FileNode";
+import styled from 'styled-components';
+import fileIcon from '../../assets/file.png';
+import docIcon from '../../assets/doc.png';
+import { FileNode } from '../../types/FileNode';
+import binaryIcon from '../../assets/image.png';
 
 const FileTree = ({ nodes }: { nodes: FileNode[] }) => {
-    const renderNode = (node: FileNode, depth = 0) => (
-        <div key={node.name}>
-          <Node $depth={depth}>
-            <Icon src={node.isDirectory ? fileIcon : docIcon} alt="icon" />
-            <span>{node.name}</span>
-          </Node>
-          {node.isDirectory && node.children && (
-            <Children>
-              {node.children.map((child) => renderNode(child, depth + 1))}
-            </Children>
-          )}
-        </div>
-      );
-      
+  const renderNode = (node: FileNode, depth = 0) => {
+    const iconSrc = node.isDirectory ? fileIcon : node.isBinary ? binaryIcon : docIcon;
+
+    return (
+      <div key={node.name}>
+        <Node $depth={depth}>
+          <Icon src={iconSrc} alt="icon" />
+          <span>{node.name}</span>
+        </Node>
+        {node.isDirectory && node.children && (
+          <Children>{node.children.map(child => renderNode(child, depth + 1))}</Children>
+        )}
+      </div>
+    );
+  };
 
   return (
     <TreeContainer>
@@ -25,7 +27,7 @@ const FileTree = ({ nodes }: { nodes: FileNode[] }) => {
         <Icon src={fileIcon} alt="file" />
         File Tree
       </TreeHeader>
-      <TreeBox>{nodes.map((node) => renderNode(node))}</TreeBox>
+      <TreeBox>{nodes.map(node => renderNode(node))}</TreeBox>
     </TreeContainer>
   );
 };
@@ -55,7 +57,7 @@ const TreeBox = styled.div`
   height: 500px;
   padding: 16px;
   overflow-y: auto;
-  max-width : 340px;
+  max-width: 340px;
 `;
 
 const Node = styled.div<{ $depth: number }>`
