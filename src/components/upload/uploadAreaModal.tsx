@@ -8,16 +8,18 @@ type Props = {
 };
 
 const UploadAreaModal: React.FC<Props> = ({ onUpload, onClose }) => {
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const zip = acceptedFiles.find((f) => f.name.endsWith(".zip"));
-      if (zip) {
-        onUpload(zip);
-        onClose(); 
-      }
-    },
-    [onUpload, onClose]
-  );
+    const onDrop = useCallback(
+        (acceptedFiles: File[]) => {
+          console.log("호출되는지?", acceptedFiles); 
+          const zip = acceptedFiles.find((f) => f.name.endsWith(".zip"));
+          if (zip) {
+            onUpload(zip); 
+            onClose();
+          }
+        },
+        [onUpload, onClose]
+      );
+      
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -27,11 +29,11 @@ const UploadAreaModal: React.FC<Props> = ({ onUpload, onClose }) => {
 
   return (
     <Overlay onClick={onClose}>
-      <Modal onClick={(e) => e.stopPropagation()} {...getRootProps()}>
-        <input {...getInputProps()} />
-        <Text>ZIP 파일을 업로드하거나<br />이곳에 드래그 앤 드롭하세요</Text>
-      </Modal>
-    </Overlay>
+  <Modal {...getRootProps()} onClick={(e) => e.stopPropagation()}>
+    <input {...getInputProps()} />
+    <Text>ZIP 파일을 업로드하거나<br />이곳에 드래그 앤 드롭하세요</Text>
+  </Modal>
+</Overlay>
   );
 };
 
