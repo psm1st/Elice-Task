@@ -44,7 +44,7 @@ const TreeHeader = styled.div`
   border-radius: 999px;
   font-weight: bold;
   gap: 10px;
-  width: fit-content;
+  max-width: 340px;
 `;
 
 const TreeBox = styled.div`
@@ -55,6 +55,7 @@ const TreeBox = styled.div`
   height: 500px;
   padding: 16px;
   overflow-y: auto;
+  max-width : 340px;
 `;
 
 const Node = styled.div<{ $depth: number }>`
