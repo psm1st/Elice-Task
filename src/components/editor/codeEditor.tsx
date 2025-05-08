@@ -4,10 +4,8 @@ import styled from 'styled-components';
 import { FileNode } from '../../types/FileNode';
 
 interface OpenFile {
-  name: string;
+  file: FileNode;
   content: string;
-  isEditable: boolean;
-  isBinary: boolean;
 }
 
 interface Props {
@@ -35,11 +33,11 @@ const CodeEditor: React.FC<Props> = ({ files, onSelectFileContent, selectedFile 
   }, []);
 
   useEffect(() => {
-    const currentTab = openTabs.find(tab => tab.name === activeFile);
+    const currentTab = openTabs.find(tab => tab.file.name === activeFile);
     if (editorRef.current && currentTab) {
       const model = monaco.editor.createModel(currentTab.content, 'typescript');
       editorRef.current.setModel(model);
-      editorRef.current.updateOptions({ readOnly: !currentTab.isEditable });
+      editorRef.current.updateOptions({ readOnly: !currentTab.file.isEditable });
     }
   }, [activeFile, openTabs]);
 
@@ -50,14 +48,12 @@ const CodeEditor: React.FC<Props> = ({ files, onSelectFileContent, selectedFile 
   }, [selectedFile]);
 
   const openFile = async (file: FileNode) => {
-    const existingTab = openTabs.find(tab => tab.name === file.name);
+    const existingTab = openTabs.find(tab => tab.file.name === file.name);
     if (!existingTab) {
       const content = await onSelectFileContent(file.name);
       const newTab: OpenFile = {
-        name: file.name,
+        file,
         content,
-        isEditable: file.isEditable || false,
-        isBinary: file.isBinary || false,
       };
       setOpenTabs(prev => [...prev, newTab]);
     }
@@ -67,15 +63,18 @@ const CodeEditor: React.FC<Props> = ({ files, onSelectFileContent, selectedFile 
   return (
     <EditorContainer>
       <Tabs>
-        {openTabs.map(tab => (
-          <Tab
-            key={tab.name}
-            active={tab.name === activeFile}
-            onClick={() => setActiveFile(tab.name)}
-          >
-            {tab.name}
-          </Tab>
-        ))}
+        {openTabs.map(tab => {
+          if (!tab?.file?.name) return null;
+          return (
+            <Tab
+              key={tab.file.name}
+              active={tab.file.name === activeFile}
+              onClick={() => setActiveFile(tab.file.name)}
+            >
+              {tab.file.name}
+            </Tab>
+          );
+        })}
       </Tabs>
       <EditorBox ref={containerRef} />
     </EditorContainer>
