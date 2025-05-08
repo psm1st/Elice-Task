@@ -64,7 +64,7 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
           ...(isLast && !isDirectory
             ? {
                 isBinary: binaryExtensions.includes(ext),
-                isEditable: editableExtensions.includes(ext),
+                isEditable: ext === '' ? !part.includes('.') : editableExtensions.includes(ext),
               }
             : {}),
         };
