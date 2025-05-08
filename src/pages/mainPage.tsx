@@ -5,7 +5,7 @@ import UploadAreaModal from "../components/upload/uploadAreaModal";
 import FileTree from "../components/fileTree/FileTree";
 import { FileNode } from "../types/FileNode";
 import { parseZipFile } from "../components/upload/parseZipFile"
-import { buildTree } from "../components/fileTree/bundleTree";
+import { buildTree } from "../components/fileTree/buildTree";
 
 const MainPage = () => {
   const [tree, setTree] = useState<FileNode[]>([]);
