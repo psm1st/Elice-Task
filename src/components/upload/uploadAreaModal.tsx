@@ -1,6 +1,6 @@
-import React, { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import styled from "styled-components";
+import React, { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import styled from 'styled-components';
 
 type Props = {
   onUpload: (file: File) => void;
@@ -8,32 +8,38 @@ type Props = {
 };
 
 const UploadAreaModal: React.FC<Props> = ({ onUpload, onClose }) => {
-    const onDrop = useCallback(
-        (acceptedFiles: File[]) => {
-          console.log("호출되는지?", acceptedFiles); 
-          const zip = acceptedFiles.find((f) => f.name.endsWith(".zip"));
-          if (zip) {
-            onUpload(zip); 
-            onClose();
-          }
-        },
-        [onUpload, onClose]
-      );
-      
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const zip = acceptedFiles.find(f => f.name.endsWith('.zip'));
+      if (zip) {
+        onUpload(zip);
+        onClose();
+      }
+    },
+    [onUpload, onClose]
+  );
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: { "application/zip": [".zip"] },
     multiple: false,
+    accept: {
+      'application/zip': ['.zip'],
+    },
   });
 
   return (
     <Overlay onClick={onClose}>
-  <Modal {...getRootProps()} onClick={(e) => e.stopPropagation()}>
-    <input {...getInputProps()} />
-    <Text>ZIP 파일을 업로드하거나<br />이곳에 드래그 앤 드롭하세요</Text>
-  </Modal>
-</Overlay>
+      <Modal onClick={e => e.stopPropagation()}>
+        <DropZone {...getRootProps()}>
+          <input {...getInputProps()} />
+          <Text>
+            ZIP 파일을 업로드하려면 클릭하거나
+            <br />
+            이곳으로 드래그하세요
+          </Text>
+        </DropZone>
+      </Modal>
+    </Overlay>
   );
 };
 
@@ -41,10 +47,7 @@ export default UploadAreaModal;
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
@@ -53,17 +56,22 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  width: 400px;
-  padding: 40px;
-  background-color: #fff;
+  background-color: none;
+  padding: 32px;
   border-radius: 16px;
+  width: 400px;
   text-align: center;
+`;
+
+const DropZone = styled.div`
   border: 2px dashed #6a0eff;
+  padding: 40px;
+  border-radius: 12px;
   cursor: pointer;
+  background-color: white;
 `;
 
 const Text = styled.p`
-  margin: 0;
   font-size: 16px;
-  color: #333;
+  margin: 0;
 `;
