@@ -16,7 +16,6 @@ export interface ZipEntry {
         (bytes[pos + 1] << 8) |
         (bytes[pos + 2] << 16) |
         (bytes[pos + 3] << 24);
-  
       if (signature !== 0x04034b50) {
         pos += 1; 
         continue;
@@ -40,7 +39,9 @@ export interface ZipEntry {
       });
       pos = nameEnd + extraLen + compressedSize;
     }
-  
-    return entries;
+    const filteredEntries = entries.filter(
+        (e) => !e.name.startsWith("__MACOSX/") && !e.name.startsWith("._")
+      );
+    return filteredEntries;
   }
   
