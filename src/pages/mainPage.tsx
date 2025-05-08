@@ -7,6 +7,7 @@ import CodeEditor from '../components/editor/codeEditor';
 import { FileNode } from '../types/FileNode';
 import { parseZipFile } from '../components/upload/parseZipFile';
 import { buildTree } from '../components/fileTree/buildTree';
+import EliceLogo from '../assets/EliceLogo.png';
 
 const MainPage = () => {
   const [tree, setTree] = useState<FileNode[]>([]);
@@ -39,10 +40,16 @@ const MainPage = () => {
 
   return (
     <Container>
-      <UploadButtons onUploadClick={() => setIsModalOpen(true)} />
-      {isModalOpen && (
-        <UploadAreaModal onUpload={handleUpload} onClose={() => setIsModalOpen(false)} />
-      )}
+      <Header>
+        <LogoSection>
+          <img src={EliceLogo} alt="Elice Logo" height={32} />
+        </LogoSection>
+        <UploadButtons onUploadClick={() => setIsModalOpen(true)} />
+        {isModalOpen && (
+          <UploadAreaModal onUpload={handleUpload} onClose={() => setIsModalOpen(false)} />
+        )}
+      </Header>
+
       <Layout>
         <FileTree
           nodes={tree}
@@ -62,9 +69,23 @@ const MainPage = () => {
 };
 
 export default MainPage;
+const Header = styled.header`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 45px;
+  padding: 0 40px 10px;
+  margin: 10px 0;
+  background-color: white;
+  border-bottom: 1px solid #eee;
+`;
 
+const LogoSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
 const Container = styled.div`
-  padding: 40px;
   font-family: Pretendard;
   max-width: 1800px;
 `;
@@ -73,6 +94,7 @@ const Layout = styled.div`
   display: flex;
   gap: 24px;
   margin-top: 24px;
+  padding: 0 40px;
 `;
 
 const EditorBox = styled.div`
