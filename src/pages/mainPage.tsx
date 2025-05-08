@@ -65,7 +65,7 @@ export default MainPage;
 
 const Container = styled.div`
   padding: 40px;
-  font-family: sans-serif;
+  font-family: Pretendard;
   max-width: 1800px;
 `;
 

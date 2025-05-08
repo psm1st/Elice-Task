@@ -60,6 +60,17 @@ const CodeEditor: React.FC<Props> = ({ files, onSelectFileContent, selectedFile 
     setActiveFile(file.name);
   };
 
+  const getShortenedName = (fileName: string) => {
+    const dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex === -1 || fileName.length <= 27) return fileName;
+
+    const base = fileName.slice(0, dotIndex);
+    const ext = fileName.slice(dotIndex);
+    const baseTrimmed = base.length > 16 ? `${base.slice(0, 14)}...${base.slice(-1)}` : base;
+
+    return `${baseTrimmed}${ext}`;
+  };
+
   return (
     <EditorContainer>
       <Tabs>
@@ -70,8 +81,9 @@ const CodeEditor: React.FC<Props> = ({ files, onSelectFileContent, selectedFile 
               key={tab.file.name}
               active={tab.file.name === activeFile}
               onClick={() => setActiveFile(tab.file.name)}
+              title={tab.file.name}
             >
-              {tab.file.name}
+              {getShortenedName(tab.file.name)}
             </Tab>
           );
         })}
@@ -92,16 +104,23 @@ const EditorContainer = styled.div`
 
 const Tabs = styled.div`
   display: flex;
-  background-color: #f3f3f3;
+  background-color: #ffffff;
   border-bottom: 1px solid #ddd;
+  gap: 10px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
   padding: 10px 16px;
   cursor: pointer;
-  background-color: ${({ active }) => (active ? '#fff' : '#f3f3f3')};
-  border-bottom: ${({ active }) => (active ? '2px solid #6200ee' : 'none')};
+  max-width: 150px;
+  height: 50px;
+  background-color: ${({ active }) => (active ? '#6700E7' : '#ffffff')};
+  border-bottom: ${({ active }) => (active ? 'none' : '2px solid #6700E7')};
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
+  color: ${({ active }) => (active ? '#ffffff' : '#6700E7')};
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 const EditorBox = styled.div`
