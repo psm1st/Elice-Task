@@ -1,16 +1,33 @@
 import styled from 'styled-components';
 import fileIcon from '../../assets/file.png';
 import docIcon from '../../assets/doc.png';
-import { FileNode } from '../../types/FileNode';
 import binaryIcon from '../../assets/image.png';
+import { FileNode } from '../../types/FileNode';
 
-const FileTree = ({ nodes }: { nodes: FileNode[] }) => {
+interface Props {
+  nodes: FileNode[];
+  onFileClick: (file: FileNode) => void;
+  selectedFileName?: string;
+}
+
+const FileTree: React.FC<Props> = ({ nodes, onFileClick, selectedFileName }) => {
   const renderNode = (node: FileNode, depth = 0) => {
     const iconSrc = node.isDirectory ? fileIcon : node.isBinary ? binaryIcon : docIcon;
 
+    const handleClick = () => {
+      if (!node.isDirectory) {
+        console.log('클릭됨:', node.name);
+        onFileClick(node);
+      }
+    };
+
     return (
-      <div key={node.name}>
-        <Node $depth={depth}>
+      <div key={`${node.name}-${depth}`}>
+        <Node
+          $depth={depth}
+          onClick={handleClick}
+          className={node.name === selectedFileName ? 'selected' : ''}
+        >
           <Icon src={iconSrc} alt="icon" />
           <span>{node.name}</span>
         </Node>
@@ -66,6 +83,12 @@ const Node = styled.div<{ $depth: number }>`
   gap: 8px;
   padding-left: ${({ $depth }) => $depth * 16}px;
   margin: 4px 0;
+  cursor: pointer;
+
+  &.selected {
+    background-color: #e6dcff;
+    border-radius: 6px;
+  }
 `;
 
 const Children = styled.div`
