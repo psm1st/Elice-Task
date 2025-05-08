@@ -10,19 +10,23 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
 
     parts.forEach((part, idx) => {
       const isLast = idx === parts.length - 1;
-      let node = current.find((n) => n.name === part);
+      const existing = current.find((n) => n.name === part && n.isDirectory === (!isLast ? true : isDirectory));
 
-      if (!node) {
-        node = {
+      if (!existing) {
+        const newNode: FileNode = {
           name: part,
           isDirectory: isLast ? isDirectory : true,
           ...(isLast || isDirectory ? { children: [] } : {}),
         };
-        current.push(node);
-      }
 
-      if (node.isDirectory && node.children) {
-        current = node.children;
+        current.push(newNode);
+        if (newNode.isDirectory && newNode.children) {
+          current = newNode.children;
+        }
+      } else {
+        if (existing.isDirectory && existing.children) {
+          current = existing.children;
+        }
       }
     });
   });
