@@ -13,6 +13,7 @@ const MainPage = () => {
 
   const handleUpload = async (file: File) => {
     const entries = await parseZipFile(file);
+    console.log("entry 오는중", entries); 
     const tree = buildTree(entries);
     setTree(tree);
   };

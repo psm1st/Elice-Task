@@ -1,32 +1,36 @@
 import styled from "styled-components";
-import fileIcon from "../../assets/file.png"; 
-import { FileNode } from "../../types/FileNode";
+import fileIcon from "../../assets/file.png";
 import docIcon from "../../assets/doc.png";
+import { FileNode } from "../../types/FileNode";
 
 const FileTree = ({ nodes }: { nodes: FileNode[] }) => {
-  const renderNode = (node: FileNode) => (
-    <Node key={node.name}>
-      <DocIcon src={docIcon} alt="file" />
-      <span>{node.name}</span>
-      {node.isDirectory && node.children && (
-        <Children>{node.children.map(renderNode)}</Children>
-      )}
-    </Node>
-  );
+    const renderNode = (node: FileNode, depth = 0) => (
+        <div key={node.name}>
+          <Node $depth={depth}>
+            <Icon src={node.isDirectory ? fileIcon : docIcon} alt="icon" />
+            <span>{node.name}</span>
+          </Node>
+          {node.isDirectory && node.children && (
+            <Children>
+              {node.children.map((child) => renderNode(child, depth + 1))}
+            </Children>
+          )}
+        </div>
+      );
+      
 
   return (
     <TreeContainer>
       <TreeHeader>
-        <FileIcon src={fileIcon} alt="file" />
+        <Icon src={fileIcon} alt="file" />
         File Tree
       </TreeHeader>
-      <TreeBox>{nodes.map(renderNode)}</TreeBox>
+      <TreeBox>{nodes.map((node) => renderNode(node))}</TreeBox>
     </TreeContainer>
   );
 };
 
 export default FileTree;
-
 
 const TreeContainer = styled.div`
   margin-top: 24px;
@@ -40,36 +44,34 @@ const TreeHeader = styled.div`
   border-radius: 999px;
   font-weight: bold;
   gap: 10px;
-  width: fit-content;
+  max-width: 340px;
 `;
 
 const TreeBox = styled.div`
   margin-top: 12px;
+  flex-direction: column;
   border: 1px solid #e3d4ff;
   border-radius: 10px;
   height: 500px;
   padding: 16px;
   overflow-y: auto;
+  max-width : 340px;
 `;
 
-const Node = styled.div`
+const Node = styled.div<{ $depth: number }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-left: 12px;
-  margin: 6px 0;
+  padding-left: ${({ $depth }) => $depth * 16}px;
+  margin: 4px 0;
 `;
 
 const Children = styled.div`
-  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
 `;
 
-const FileIcon = styled.img`
-  width: 16px;
-  height: 16px;
-`;
-
-const DocIcon = styled.img`
+const Icon = styled.img`
   width: 16px;
   height: 16px;
 `;
