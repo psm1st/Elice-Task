@@ -107,13 +107,14 @@ const Tabs = styled.div`
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
   gap: 10px;
+  margin-top: 25px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
   padding: 10px 16px;
   cursor: pointer;
   max-width: 150px;
-  height: 50px;
+  height: 30px;
   background-color: ${({ active }) => (active ? '#6700E7' : '#ffffff')};
   border-bottom: ${({ active }) => (active ? 'none' : '2px solid #6700E7')};
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
