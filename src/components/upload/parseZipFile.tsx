@@ -27,15 +27,16 @@ export async function parseZipFile(file: File): Promise<ZipEntry[]> {
     const nameStart = pos + 30;
     const nameEnd = nameStart + nameLen;
     const name = decoder.decode(bytes.slice(nameStart, nameEnd));
+    const isDirectory = name.endsWith('/');
     const fileContent = decoder.decode(
       bytes.slice(nameEnd + extraLen, nameEnd + extraLen + compressedSize)
     );
-
     entries.push({
       name,
       isDirectory: name.endsWith('/'),
-      content: name.endsWith('/') ? undefined : fileContent,
+      content: isDirectory ? undefined : fileContent,
     });
+
     pos = nameEnd + extraLen + compressedSize;
   }
   const filteredEntries = entries.filter(
