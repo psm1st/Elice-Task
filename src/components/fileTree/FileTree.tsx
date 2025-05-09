@@ -53,6 +53,7 @@ export default FileTree;
 
 const TreeContainer = styled.div`
   margin-top: 24px;
+  width: 300px;
 `;
 
 const TreeHeader = styled.div`
