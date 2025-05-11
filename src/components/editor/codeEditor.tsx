@@ -216,37 +216,39 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     return (
       <EditorContainer>
         <TabBar>
-          <Tabs>
-            {openTabs.map(tab => {
-              const pathKey = `${tab.file.path}/${tab.file.name}`;
-              const isActive = pathKey === activeFile;
-              return (
-                <Tab
-                  key={pathKey}
-                  active={isActive}
-                  onClick={() => {
-                    setActiveFile(pathKey);
-                    onActiveFileChange?.(tab.file);
-                  }}
-                  title={pathKey}
-                >
-                  {getShortenedName(tab.file.name)}
-                  {tab.modified ? (
-                    <CloseIcon src={dotIcon} alt="modified" />
-                  ) : (
-                    <CloseIcon
-                      src={isActive ? cancelWhiteIcon : cancelIcon}
-                      alt="close"
-                      onClick={e => {
-                        e.stopPropagation();
-                        closeTab(pathKey);
-                      }}
-                    />
-                  )}
-                </Tab>
-              );
-            })}
-          </Tabs>
+          <TabsWrapper>
+            <Tabs>
+              {openTabs.map(tab => {
+                const pathKey = `${tab.file.path}/${tab.file.name}`;
+                const isActive = pathKey === activeFile;
+                return (
+                  <Tab
+                    key={pathKey}
+                    active={isActive}
+                    onClick={() => {
+                      setActiveFile(pathKey);
+                      onActiveFileChange?.(tab.file);
+                    }}
+                    title={pathKey}
+                  >
+                    {getShortenedName(tab.file.name)}
+                    {tab.modified ? (
+                      <CloseIcon src={dotIcon} alt="modified" />
+                    ) : (
+                      <CloseIcon
+                        src={isActive ? cancelWhiteIcon : cancelIcon}
+                        alt="close"
+                        onClick={e => {
+                          e.stopPropagation();
+                          closeTab(pathKey);
+                        }}
+                      />
+                    )}
+                  </Tab>
+                );
+              })}
+            </Tabs>
+          </TabsWrapper>
           <ThemeSwitcher>
             <ThemeButton
               active={theme === 'vs'}
@@ -287,17 +289,21 @@ const TabBar = styled.div`
   margin-top: 10px;
 `;
 
-const Tabs = styled.div`
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
+const TabsWrapper = styled.div`
   flex: 1;
-  padding-right: 10px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
-const ThemeSwitcher = styled.div`
-  flex-shrink: 0;
-  margin-right: 16px;
+const Tabs = styled.div`
+  display: inline-flex;
+  gap: 10px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
@@ -317,9 +323,14 @@ const Tab = styled.div<{ active: boolean }>`
   justify-content: space-between;
 `;
 
+const ThemeSwitcher = styled.div`
+  flex-shrink: 0;
+  margin-right: 16px;
+`;
+
 const ThemeButton = styled.button<{ active: boolean }>`
-  background-color: ${({ active }) => (active ? '#222' : '#fff')};
-  color: ${({ active }) => (active ? '#fff' : '#000')};
+  background-color: ${({ active }) => (active ? '#ffffff' : '#222')};
+  color: ${({ active }) => (active ? '#000' : '#fff')};
   border: 1px solid #000;
   padding: 6px 12px;
   border-radius: 6px;
