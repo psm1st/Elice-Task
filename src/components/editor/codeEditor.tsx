@@ -34,6 +34,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     const containerRef = useRef<HTMLDivElement>(null);
     const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
     const [activeFile, setActiveFile] = useState<string | null>(null);
+    const [theme, setTheme] = useState<'vs-dark' | 'vs'>('vs-dark');
     const filesMapRef = useRef<Map<string, Blob>>(new Map());
 
     useImperativeHandle(ref, () => ({
@@ -66,18 +67,18 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
         editorRef.current = monaco.editor.create(containerRef.current, {
           value: '',
           language: 'plaintext',
-          theme: 'vs-light',
+          theme,
           automaticLayout: true,
         });
-
         monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
           target: monaco.languages.typescript.ScriptTarget.ES2020,
           allowNonTsExtensions: true,
         });
-
         monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+      } else if (editorRef.current) {
+        monaco.editor.setTheme(theme);
       }
-    }, []);
+    }, [theme]);
 
     useEffect(() => {
       const currentTab = openTabs.find(tab => `${tab.file.path}/${tab.file.name}` === activeFile);
@@ -148,10 +149,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
             onFileSave?.(activeFile!, blob);
           }
         }
-        if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'z') {
-          e.preventDefault();
-          editorRef.current?.trigger('keyboard', 'redo', null);
-        }
       };
       window.addEventListener('keydown', handler);
       return () => window.removeEventListener('keydown', handler);
@@ -218,37 +215,47 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
 
     return (
       <EditorContainer>
-        <Tabs>
-          {openTabs.map(tab => {
-            const pathKey = `${tab.file.path}/${tab.file.name}`;
-            const isActive = pathKey === activeFile;
-            return (
-              <Tab
-                key={pathKey}
-                active={isActive}
-                onClick={() => {
-                  setActiveFile(pathKey);
-                  onActiveFileChange?.(tab.file);
-                }}
-                title={pathKey}
-              >
-                {getShortenedName(tab.file.name)}
-                {tab.modified ? (
-                  <CloseIcon src={dotIcon} alt="modified" />
-                ) : (
-                  <CloseIcon
-                    src={isActive ? cancelWhiteIcon : cancelIcon}
-                    alt="close"
-                    onClick={e => {
-                      e.stopPropagation();
-                      closeTab(pathKey);
-                    }}
-                  />
-                )}
-              </Tab>
-            );
-          })}
-        </Tabs>
+        <TabBar>
+          <Tabs>
+            {openTabs.map(tab => {
+              const pathKey = `${tab.file.path}/${tab.file.name}`;
+              const isActive = pathKey === activeFile;
+              return (
+                <Tab
+                  key={pathKey}
+                  active={isActive}
+                  onClick={() => {
+                    setActiveFile(pathKey);
+                    onActiveFileChange?.(tab.file);
+                  }}
+                  title={pathKey}
+                >
+                  {getShortenedName(tab.file.name)}
+                  {tab.modified ? (
+                    <CloseIcon src={dotIcon} alt="modified" />
+                  ) : (
+                    <CloseIcon
+                      src={isActive ? cancelWhiteIcon : cancelIcon}
+                      alt="close"
+                      onClick={e => {
+                        e.stopPropagation();
+                        closeTab(pathKey);
+                      }}
+                    />
+                  )}
+                </Tab>
+              );
+            })}
+          </Tabs>
+          <ThemeSwitcher>
+            <ThemeButton
+              active={theme === 'vs'}
+              onClick={() => setTheme(prev => (prev === 'vs' ? 'vs-dark' : 'vs'))}
+            >
+              {theme === 'vs' ? 'Dark Theme' : 'Light Theme'}
+            </ThemeButton>
+          </ThemeSwitcher>
+        </TabBar>
         <EditorBox ref={containerRef}>
           {(isImage || isPDF) && (
             <ViewerOverlay>
@@ -271,12 +278,26 @@ const EditorContainer = styled.div`
   height: 100%;
 `;
 
-const Tabs = styled.div`
+const TabBar = styled.div`
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
-  gap: 10px;
   margin-top: 10px;
+`;
+
+const Tabs = styled.div`
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  flex: 1;
+  padding-right: 10px;
+`;
+
+const ThemeSwitcher = styled.div`
+  flex-shrink: 0;
+  margin-right: 16px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
@@ -294,6 +315,15 @@ const Tab = styled.div<{ active: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
+`;
+
+const ThemeButton = styled.button<{ active: boolean }>`
+  background-color: ${({ active }) => (active ? '#222' : '#fff')};
+  color: ${({ active }) => (active ? '#fff' : '#000')};
+  border: 1px solid #000;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
 `;
 
 const CloseIcon = styled.img`
