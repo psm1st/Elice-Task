@@ -102,7 +102,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
                 startColumn: word.startColumn,
                 endColumn: word.endColumn,
               };
-
               const suggestions = getSuggestions(lang, range);
               return { suggestions };
             },
@@ -321,7 +320,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
       if (dotIndex === -1 || fileName.length <= 27) return fileName;
       const base = fileName.slice(0, dotIndex);
       const ext = fileName.slice(dotIndex);
-      const baseTrimmed = base.length > 16 ? `${base.slice(0, 14)}...${base.slice(-1)}` : base;
+      const baseTrimmed = base.length > 10 ? `${base.slice(0, 14)}...${base.slice(-1)}` : base;
       return `${baseTrimmed}${ext}`;
     };
 
