@@ -1,4 +1,4 @@
-import { ZipEntry } from '../upload/parseZipFile';
+import { ZipEntry } from '../../types/parseZipFile';
 import { FileNode } from '../../types/FileNode';
 
 const binaryExtensions = [
@@ -16,6 +16,7 @@ const binaryExtensions = [
   '.mp4',
   '.webm',
 ];
+
 const editableExtensions = [
   '.js',
   '.ts',
@@ -46,11 +47,10 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
   entries.forEach(({ name, isDirectory }) => {
     const parts = name.split('/').filter(Boolean);
     let current = root;
-    let path = '';
 
     parts.forEach((part, idx) => {
       const isLast = idx === parts.length - 1;
-      path = path ? `${path}/${part}` : part;
+      const path = parts.slice(0, idx).join('/');
 
       let existing = current.find(n => n.name === part);
       if (!existing) {
@@ -58,7 +58,7 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
         const newNode: FileNode = {
           name: part,
           isDirectory: !isLast || isDirectory,
-          path: parts.slice(0, idx).join('/'),
+          path,
           ...(isLast && !isDirectory
             ? {
                 isBinary: binaryExtensions.includes(ext),

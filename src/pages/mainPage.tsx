@@ -5,7 +5,7 @@ import UploadAreaModal from '../components/upload/uploadAreaModal';
 import FileTree from '../components/fileTree/FileTree';
 import CodeEditor, { CodeEditorRef } from '../components/editor/codeEditor';
 import { FileNode } from '../types/FileNode';
-import { parseZipFile } from '../components/upload/parseZipFile';
+import { parseZipFile } from '../types/parseZipFile';
 import { buildTree } from '../components/fileTree/buildTree';
 import EliceLogo from '../assets/EliceLogo.png';
 
@@ -40,7 +40,8 @@ const MainPage = () => {
   };
 
   const getFileContent = async (filePath: string): Promise<Blob | undefined> => {
-    return filesMap.get(filePath);
+    const blob = filesMap.get(filePath);
+    return blob;
   };
 
   return (
