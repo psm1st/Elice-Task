@@ -20,6 +20,5 @@ export async function parseZipFile(file: File): Promise<ZipEntry[]> {
     });
   }
 
-  const filtered = entries.filter(e => !e.name.startsWith('__MACOSX/') && !e.name.startsWith('._'));
-  return filtered;
+  return entries.filter(e => !e.name.startsWith('__MACOSX/') && !e.name.startsWith('._'));
 }

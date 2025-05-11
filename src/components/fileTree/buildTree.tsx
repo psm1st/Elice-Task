@@ -46,38 +46,33 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
   entries.forEach(({ name, isDirectory }) => {
     const parts = name.split('/').filter(Boolean);
     let current = root;
+    let path = '';
 
     parts.forEach((part, idx) => {
       const isLast = idx === parts.length - 1;
+      path = path ? `${path}/${part}` : part;
 
-      const existing = current.find(
-        n => n.name === part && n.isDirectory === (!isLast ? true : isDirectory)
-      );
-
+      let existing = current.find(n => n.name === part);
       if (!existing) {
         const ext = isLast ? getExtension(part) : '';
-
         const newNode: FileNode = {
           name: part,
-          isDirectory: isLast ? isDirectory : true,
-          ...(isLast || isDirectory ? { children: [] } : {}),
+          isDirectory: !isLast || isDirectory,
+          path: parts.slice(0, idx).join('/'),
           ...(isLast && !isDirectory
             ? {
                 isBinary: binaryExtensions.includes(ext),
-                isEditable: ext === '' ? !part.includes('.') : editableExtensions.includes(ext),
+                isEditable: editableExtensions.includes(ext),
               }
             : {}),
+          ...(isLast || isDirectory ? { children: [] } : {}),
         };
-
         current.push(newNode);
+        existing = newNode;
+      }
 
-        if (newNode.isDirectory && newNode.children) {
-          current = newNode.children;
-        }
-      } else {
-        if (existing.isDirectory && existing.children) {
-          current = existing.children;
-        }
+      if (existing.isDirectory && existing.children) {
+        current = existing.children;
       }
     });
   });

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import * as monaco from 'monaco-editor';
 import styled from 'styled-components';
 import { FileNode } from '../../types/FileNode';
 import cancelIcon from '../../assets/cancel.png';
 import cancelWhiteIcon from '../../assets/cancelWhite.png';
 import dotIcon from '../../assets/dot.png';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 interface OpenFile {
   file: FileNode;
@@ -14,26 +16,48 @@ interface OpenFile {
 
 export interface CodeEditorRef {
   getOpenTabs: () => OpenFile[];
+  downloadZip: (originalZipName?: string) => void;
 }
 
 interface Props {
   files: FileNode[];
-  onSelectFileContent: (fileName: string) => Promise<Blob | undefined>;
+  onSelectFileContent: (filePath: string) => Promise<Blob | undefined>;
   selectedFile: FileNode | null;
   onActiveFileChange?: (file: FileNode | null) => void;
   originalZipName?: string;
-  onFileSave?: (fileName: string, content: Blob) => void;
+  onFileSave?: (filePath: string, content: Blob) => void;
 }
 
 const CodeEditor = forwardRef<CodeEditorRef, Props>(
-  ({ onSelectFileContent, selectedFile, onActiveFileChange, onFileSave }, ref) => {
+  ({ onSelectFileContent, selectedFile, onActiveFileChange, onFileSave, files }, ref) => {
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
     const [activeFile, setActiveFile] = useState<string | null>(null);
+    const filesMapRef = useRef<Map<string, Blob>>(new Map());
 
     useImperativeHandle(ref, () => ({
       getOpenTabs: () => openTabs,
+      downloadZip: async (originalZipName = 'files') => {
+        const zip = new JSZip();
+        const addToZip = async (nodes: FileNode[], path = '') => {
+          for (const node of nodes) {
+            const fullPath = path ? `${path}/${node.name}` : node.name;
+            if (node.isDirectory && node.children) {
+              await addToZip(node.children, fullPath);
+            } else {
+              const openTab = openTabs.find(
+                tab => tab.file.path + '/' + tab.file.name === fullPath
+              );
+              const blob = openTab ? openTab.content : filesMapRef.current.get(fullPath);
+              if (blob) zip.file(fullPath, blob);
+            }
+          }
+        };
+        await addToZip(files);
+        const blob = await zip.generateAsync({ type: 'blob' });
+        saveAs(blob, `${originalZipName}_new.zip`);
+      },
     }));
 
     useEffect(() => {
@@ -48,7 +72,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     }, []);
 
     useEffect(() => {
-      const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+      const currentTab = openTabs.find(tab => `${tab.file.path}/${tab.file.name}` === activeFile);
       if (!editorRef.current || !currentTab) return;
 
       const fileName = currentTab.file.name.toLowerCase();
@@ -56,7 +80,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
         /\.(ts|tsx|js|jsx|json|md|txt|html|css|scss|xml|csv|py|java|c|cpp|sh)$/i.test(fileName);
 
       if (isTextFile) {
-        const uri = monaco.Uri.parse(`file:///${currentTab.file.name}`);
+        const uri = monaco.Uri.parse(`file:///${activeFile}`);
         let model = monaco.editor.getModel(uri);
 
         if (!model) {
@@ -68,7 +92,9 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
             model!.onDidChangeContent(() => {
               setOpenTabs(prevTabs =>
                 prevTabs.map(tab =>
-                  tab.file.name === currentTab.file.name ? { ...tab, modified: true } : tab
+                  `${tab.file.path}/${tab.file.name}` === activeFile
+                    ? { ...tab, modified: true }
+                    : tab
                 )
               );
             });
@@ -84,7 +110,9 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
       const handler = (e: KeyboardEvent) => {
         if (e.metaKey && e.key === 's') {
           e.preventDefault();
-          const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+          const currentTab = openTabs.find(
+            tab => `${tab.file.path}/${tab.file.name}` === activeFile
+          );
           if (!currentTab || !editorRef.current) return;
           const model = editorRef.current.getModel();
           const text = model?.getValue();
@@ -92,12 +120,13 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
             const blob = new Blob([text], { type: 'text/plain' });
             setOpenTabs(prevTabs =>
               prevTabs.map(tab =>
-                tab.file.name === currentTab.file.name
+                `${tab.file.path}/${tab.file.name}` === activeFile
                   ? { ...tab, content: blob, modified: false }
                   : tab
               )
             );
-            onFileSave?.(currentTab.file.name, blob);
+            filesMapRef.current.set(activeFile!, blob);
+            onFileSave?.(activeFile!, blob);
           }
         }
       };
@@ -112,23 +141,25 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     }, [selectedFile]);
 
     const openFile = async (file: FileNode) => {
-      const existingTab = openTabs.find(tab => tab.file.name === file.name);
+      const filePath = `${file.path}/${file.name}`;
+      const existingTab = openTabs.find(tab => `${tab.file.path}/${tab.file.name}` === filePath);
       if (!existingTab) {
-        const content = await onSelectFileContent(file.name);
+        const content = await onSelectFileContent(filePath);
         if (!content) return;
         const newTab: OpenFile = { file, content, modified: false };
         setOpenTabs(prev => [...prev, newTab]);
+        filesMapRef.current.set(filePath, content);
       }
-      setActiveFile(file.name);
+      setActiveFile(filePath);
       onActiveFileChange?.(file);
     };
 
-    const closeTab = (fileName: string) => {
+    const closeTab = (filePath: string) => {
       setOpenTabs(prev => {
-        const newTabs = prev.filter(tab => tab.file.name !== fileName);
-        if (activeFile === fileName) {
+        const newTabs = prev.filter(tab => `${tab.file.path}/${tab.file.name}` !== filePath);
+        if (activeFile === filePath) {
           const nextTab = newTabs[newTabs.length - 1] || null;
-          setActiveFile(nextTab?.file.name || null);
+          setActiveFile(nextTab ? `${nextTab.file.path}/${nextTab.file.name}` : null);
           onActiveFileChange?.(nextTab?.file || null);
         }
         return newTabs;
@@ -158,7 +189,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
       return 'plaintext';
     };
 
-    const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+    const currentTab = openTabs.find(tab => `${tab.file.path}/${tab.file.name}` === activeFile);
     const fileName = currentTab?.file.name.toLowerCase() || '';
     const isImage = currentTab && /\.(png|jpe?g|gif|bmp|webp)$/i.test(fileName);
     const isPDF = currentTab && fileName.endsWith('.pdf');
@@ -168,16 +199,17 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
       <EditorContainer>
         <Tabs>
           {openTabs.map(tab => {
-            const isActive = tab.file.name === activeFile;
+            const pathKey = `${tab.file.path}/${tab.file.name}`;
+            const isActive = pathKey === activeFile;
             return (
               <Tab
-                key={tab.file.name}
+                key={pathKey}
                 active={isActive}
                 onClick={() => {
-                  setActiveFile(tab.file.name);
+                  setActiveFile(pathKey);
                   onActiveFileChange?.(tab.file);
                 }}
-                title={tab.file.name}
+                title={pathKey}
               >
                 {getShortenedName(tab.file.name)}
                 {tab.modified ? (
@@ -188,7 +220,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
                     alt="close"
                     onClick={e => {
                       e.stopPropagation();
-                      closeTab(tab.file.name);
+                      closeTab(pathKey);
                     }}
                   />
                 )}
