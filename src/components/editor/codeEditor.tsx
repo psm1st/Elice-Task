@@ -34,7 +34,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     const containerRef = useRef<HTMLDivElement>(null);
     const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
     const [activeFile, setActiveFile] = useState<string | null>(null);
-    const [theme, setTheme] = useState<'vs-dark' | 'vs'>('vs-dark');
+    const [theme, setTheme] = useState<'vs-dark' | 'vs'>('vs');
     const filesMapRef = useRef<Map<string, Blob>>(new Map());
 
     useImperativeHandle(ref, () => ({
