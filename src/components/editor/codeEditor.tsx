@@ -47,9 +47,12 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
               await addToZip(node.children, fullPath);
             } else {
               const openTab = openTabs.find(
-                tab => tab.file.path + '/' + tab.file.name === fullPath
+                tab => `${tab.file.path}/${tab.file.name}` === fullPath
               );
-              const blob = openTab ? openTab.content : filesMapRef.current.get(fullPath);
+              let blob = openTab?.content || filesMapRef.current.get(fullPath);
+              if (!blob) {
+                blob = await onSelectFileContent(fullPath);
+              }
               if (blob) zip.file(fullPath, blob);
             }
           }
