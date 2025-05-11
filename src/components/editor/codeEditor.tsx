@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as monaco from 'monaco-editor';
 import styled from 'styled-components';
 import { FileNode } from '../../types/FileNode';
+import cancelIcon from '../../assets/cancel.png';
+import cancelWhiteIcon from '../../assets/cancelWhite.png';
 
 interface OpenFile {
   file: FileNode;
@@ -12,7 +14,7 @@ interface Props {
   files: FileNode[];
   onSelectFileContent: (fileName: string) => Promise<Blob | undefined>;
   selectedFile: FileNode | null;
-  onActiveFileChange?: (file: FileNode) => void;
+  onActiveFileChange?: (file: FileNode | null) => void;
 }
 
 const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile, onActiveFileChange }) => {
@@ -73,6 +75,18 @@ const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile, onActi
     onActiveFileChange?.(file);
   };
 
+  const closeTab = (fileName: string) => {
+    setOpenTabs(prev => {
+      const newTabs = prev.filter(tab => tab.file.name !== fileName);
+      if (activeFile === fileName) {
+        const nextTab = newTabs[newTabs.length - 1] || null;
+        setActiveFile(nextTab?.file.name || null);
+        onActiveFileChange?.(nextTab?.file || null);
+      }
+      return newTabs;
+    });
+  };
+
   const getShortenedName = (fileName: string) => {
     const dotIndex = fileName.lastIndexOf('.');
     if (dotIndex === -1 || fileName.length <= 27) return fileName;
@@ -106,19 +120,30 @@ const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile, onActi
   return (
     <EditorContainer>
       <Tabs>
-        {openTabs.map(tab => (
-          <Tab
-            key={tab.file.name}
-            active={tab.file.name === activeFile}
-            onClick={() => {
-              setActiveFile(tab.file.name);
-              onActiveFileChange?.(tab.file);
-            }}
-            title={tab.file.name}
-          >
-            {getShortenedName(tab.file.name)}
-          </Tab>
-        ))}
+        {openTabs.map(tab => {
+          const isActive = tab.file.name === activeFile;
+          return (
+            <Tab
+              key={tab.file.name}
+              active={isActive}
+              onClick={() => {
+                setActiveFile(tab.file.name);
+                onActiveFileChange?.(tab.file);
+              }}
+              title={tab.file.name}
+            >
+              {getShortenedName(tab.file.name)}
+              <CloseIcon
+                src={isActive ? cancelWhiteIcon : cancelIcon}
+                alt="close"
+                onClick={e => {
+                  e.stopPropagation();
+                  closeTab(tab.file.name);
+                }}
+              />
+            </Tab>
+          );
+        })}
       </Tabs>
 
       <EditorBox ref={containerRef}>
@@ -162,6 +187,16 @@ const Tab = styled.div<{ active: boolean }>`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const CloseIcon = styled.img`
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  cursor: pointer;
 `;
 
 const EditorBox = styled.div`
