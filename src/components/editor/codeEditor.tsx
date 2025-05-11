@@ -129,7 +129,12 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
             onFileSave?.(activeFile!, blob);
           }
         }
+        if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          editorRef.current?.trigger('keyboard', 'redo', null);
+        }
       };
+
       window.addEventListener('keydown', handler);
       return () => window.removeEventListener('keydown', handler);
     }, [openTabs, activeFile]);
