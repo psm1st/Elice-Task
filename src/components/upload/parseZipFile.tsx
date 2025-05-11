@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 export interface ZipEntry {
   name: string;
   isDirectory: boolean;
-  content?: string;
+  content?: Blob;
 }
 
 export async function parseZipFile(file: File): Promise<ZipEntry[]> {
@@ -12,7 +12,7 @@ export async function parseZipFile(file: File): Promise<ZipEntry[]> {
 
   for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
     const isDirectory = zipEntry.dir;
-    const content = isDirectory ? undefined : await zipEntry.async('text');
+    const content = isDirectory ? undefined : await zipEntry.async('blob');
     entries.push({
       name: relativePath,
       isDirectory,
