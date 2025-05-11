@@ -132,7 +132,10 @@ if (!model) {
 | INP  | 32ms | **30ms** |
 
 ## 🤔 기술적 이슈와 해결 과정
+
 [관련 노션 페이지](https://stern015.notion.site/1ecfcc2d2db38032b139ea0dbb759c56)
+
+<img width="627" alt="스크린샷 2025-05-11 오후 11 11 39" src="https://github.com/user-attachments/assets/faecbb4c-c0a3-41d9-bc51-2249762ecb30" />
 
 <br />
 
