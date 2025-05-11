@@ -24,7 +24,8 @@
 ### 화면 구성
 |화면 명|
 |:---:|
-|<img src="" width="450" alt="추후 업데이트"/>|
+|<img width="1505" alt="스크린샷 2025-05-11 오후 9 29 41" src="https://github.com/user-attachments/assets/e3f1fcf5-dad9-42fe-8887-87868a52c0f1" />
+|
 |- 파일 업로드 <br/> - 파일 트리뷰 <br/> - 파일 editor <br/> - 파일 editor <br /> - 탭 기능 <br /> - 탭 기능 <br /> - ZIP 파일 다운로드|
 
 <br />
