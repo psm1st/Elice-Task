@@ -8,17 +8,19 @@ import { FileNode } from '../types/FileNode';
 import { parseZipFile } from '../components/upload/parseZipFile';
 import { buildTree } from '../components/fileTree/buildTree';
 import EliceLogo from '../assets/EliceLogo.png';
-
 const MainPage = () => {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filesMap, setFilesMap] = useState<Map<string, Blob>>(new Map());
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
+  const [originalZipName, setOriginalZipName] = useState<string>('uploaded');
+  const [originalFileMap, setOriginalFileMap] = useState<Map<string, Blob>>(new Map());
 
   const handleUpload = async (file: File) => {
     const entries = await parseZipFile(file);
     const tree = buildTree(entries);
     setTree(tree);
+    setOriginalZipName(file.name.replace(/\.zip$/i, ''));
 
     const newMap = new Map<string, Blob>();
     for (const entry of entries) {
@@ -28,6 +30,7 @@ const MainPage = () => {
       }
     }
     setFilesMap(newMap);
+    setOriginalFileMap(newMap);
   };
 
   const handleFileClick = (file: FileNode) => {
@@ -44,7 +47,13 @@ const MainPage = () => {
         <LogoSection>
           <img src={EliceLogo} alt="Elice Logo" height={32} />
         </LogoSection>
-        <UploadButtons onUploadClick={() => setIsModalOpen(true)} />
+        <UploadButtons
+          onUploadClick={() => setIsModalOpen(true)}
+          originalZipName={originalZipName}
+          originalFileMap={originalFileMap}
+          modifiedFileMap={filesMap}
+        />
+
         {isModalOpen && (
           <UploadAreaModal onUpload={handleUpload} onClose={() => setIsModalOpen(false)} />
         )}
@@ -62,6 +71,7 @@ const MainPage = () => {
             onSelectFileContent={getFileContent}
             selectedFile={selectedFile}
             onActiveFileChange={setSelectedFile}
+            originalZipName={originalZipName}
           />
         </EditorBox>
       </Layout>
@@ -70,6 +80,7 @@ const MainPage = () => {
 };
 
 export default MainPage;
+
 const Header = styled.header`
   display: flex;
   justify-content: space-between;
@@ -86,6 +97,7 @@ const LogoSection = styled.div`
   align-items: center;
   gap: 12px;
 `;
+
 const Container = styled.div`
   font-family: Pretendard;
   max-width: 1800px;
