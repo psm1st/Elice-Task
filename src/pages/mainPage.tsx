@@ -61,6 +61,7 @@ const MainPage = () => {
             files={tree}
             onSelectFileContent={getFileContent}
             selectedFile={selectedFile}
+            onActiveFileChange={setSelectedFile}
           />
         </EditorBox>
       </Layout>

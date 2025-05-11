@@ -12,9 +12,10 @@ interface Props {
   files: FileNode[];
   onSelectFileContent: (fileName: string) => Promise<Blob | undefined>;
   selectedFile: FileNode | null;
+  onActiveFileChange?: (file: FileNode) => void;
 }
 
-const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile }) => {
+const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile, onActiveFileChange }) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
@@ -69,6 +70,7 @@ const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile }) => {
       setOpenTabs(prev => [...prev, newTab]);
     }
     setActiveFile(file.name);
+    onActiveFileChange?.(file);
   };
 
   const getShortenedName = (fileName: string) => {
@@ -108,7 +110,10 @@ const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile }) => {
           <Tab
             key={tab.file.name}
             active={tab.file.name === activeFile}
-            onClick={() => setActiveFile(tab.file.name)}
+            onClick={() => {
+              setActiveFile(tab.file.name);
+              onActiveFileChange?.(tab.file);
+            }}
             title={tab.file.name}
           >
             {getShortenedName(tab.file.name)}
