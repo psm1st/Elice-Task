@@ -88,23 +88,27 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
 
         if (!model) {
           currentTab.content.text().then(text => {
-            model = monaco.editor.createModel(text, getLanguage(fileName), uri);
-            editorRef.current!.setModel(model!);
-            editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
+            requestIdleCallback(() => {
+              model = monaco.editor.createModel(text, getLanguage(fileName), uri);
+              editorRef.current!.setModel(model!);
+              editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
 
-            model!.onDidChangeContent(() => {
-              setOpenTabs(prevTabs =>
-                prevTabs.map(tab =>
-                  `${tab.file.path}/${tab.file.name}` === activeFile
-                    ? { ...tab, modified: true }
-                    : tab
-                )
-              );
+              model!.onDidChangeContent(() => {
+                setOpenTabs(prevTabs =>
+                  prevTabs.map(tab =>
+                    `${tab.file.path}/${tab.file.name}` === activeFile
+                      ? { ...tab, modified: true }
+                      : tab
+                  )
+                );
+              });
             });
           });
         } else {
-          editorRef.current.setModel(model);
-          editorRef.current.updateOptions({ readOnly: currentTab.file.isEditable === false });
+          requestIdleCallback(() => {
+            editorRef.current!.setModel(model!);
+            editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
+          });
         }
       }
     }, [activeFile]);
