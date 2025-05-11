@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/07bfa0eb-e4c4-4123-9f74-e9d2ae1529ec)## 📝 Code Editor 소개
+# 📝 Code Editor 소개
 ### 프로젝트 소개 
 ![image](https://github.com/user-attachments/assets/2f201fdd-2682-482e-9d45-2b5e496a4891)
 
