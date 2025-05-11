@@ -50,7 +50,7 @@ export function buildTree(entries: ZipEntry[]): FileNode[] {
 
     parts.forEach((part, idx) => {
       const isLast = idx === parts.length - 1;
-      const path = parts.slice(0, idx + 1).join('/');
+      const path = parts.slice(0, idx).join('/');
 
       let existing = current.find(n => n.name === part);
       if (!existing) {

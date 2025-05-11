@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { ZipEntry } from '../types/parseZipFile';
 
 self.onmessage = async (e: MessageEvent<File>) => {
+  console.log('parsed:', e.data);
   const file = e.data;
   const zip = await JSZip.loadAsync(file);
 

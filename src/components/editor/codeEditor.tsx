@@ -7,6 +7,11 @@ import cancelWhiteIcon from '../../assets/cancelWhite.png';
 import dotIcon from '../../assets/dot.png';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import JsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import TsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+import HtmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+import CssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
 
 interface OpenFile {
   file: FileNode;
@@ -36,6 +41,23 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
     const [activeFile, setActiveFile] = useState<string | null>(null);
     const [theme, setTheme] = useState<'vs-dark' | 'vs'>('vs');
     const filesMapRef = useRef<Map<string, Blob>>(new Map());
+    (self as any).MonacoEnvironment = {
+      getWorker(_: string, label: string) {
+        if (label === 'json') {
+          return new JsonWorker();
+        }
+        if (label === 'css') {
+          return new CssWorker();
+        }
+        if (label === 'html') {
+          return new HtmlWorker();
+        }
+        if (label === 'typescript' || label === 'javascript') {
+          return new TsWorker();
+        }
+        return new EditorWorker();
+      },
+    };
 
     useImperativeHandle(ref, () => ({
       getOpenTabs: () => openTabs,
@@ -478,7 +500,7 @@ const CloseIcon = styled.img`
 const EditorBox = styled.div`
   flex: 1;
   width: 100%;
-  min-height: 500px;
+  height: 500px;
   position: relative;
 `;
 

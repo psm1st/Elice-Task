@@ -40,7 +40,8 @@ const MainPage = () => {
   };
 
   const getFileContent = async (filePath: string): Promise<Blob | undefined> => {
-    return filesMap.get(filePath);
+    const blob = filesMap.get(filePath);
+    return blob;
   };
 
   return (
