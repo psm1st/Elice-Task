@@ -70,15 +70,147 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           theme,
           automaticLayout: true,
         });
+
         monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
           target: monaco.languages.typescript.ScriptTarget.ES2020,
           allowNonTsExtensions: true,
         });
         monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+
+        const languages = [
+          'typescript',
+          'javascript',
+          'json',
+          'markdown',
+          'html',
+          'css',
+          'python',
+          'java',
+          'cpp',
+          'shell',
+          'plaintext',
+        ];
+
+        languages.forEach(lang => {
+          monaco.languages.registerCompletionItemProvider(lang, {
+            triggerCharacters: ['.', '<', 'f', 'd'],
+            provideCompletionItems: (model, position) => {
+              const word = model.getWordUntilPosition(position);
+              const range: monaco.IRange = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn,
+              };
+
+              const suggestions = getSuggestions(lang, range);
+              return { suggestions };
+            },
+          });
+        });
       } else if (editorRef.current) {
         monaco.editor.setTheme(theme);
       }
     }, [theme]);
+
+    const getSuggestions = (
+      lang: string,
+      range: monaco.IRange
+    ): monaco.languages.CompletionItem[] => {
+      switch (lang) {
+        case 'javascript':
+        case 'typescript':
+          return [
+            {
+              label: 'log',
+              kind: monaco.languages.CompletionItemKind.Function,
+              insertText: 'console.log($1);',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '콘솔 출력',
+              range,
+            },
+            {
+              label: 'forEach',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'array.forEach((item) => {\n  $1\n});',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'forEach 루프',
+              range,
+            },
+            {
+              label: 'func',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'function $1() {\n  $2\n}',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '함수 선언',
+              range,
+            },
+          ];
+
+        case 'python':
+          return [
+            {
+              label: 'def',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'def $1():\n    $2',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '함수 정의',
+              range,
+            },
+            {
+              label: 'print',
+              kind: monaco.languages.CompletionItemKind.Function,
+              insertText: 'print($1)',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '출력 함수',
+              range,
+            },
+            {
+              label: 'ifmain',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'if __name__ == "__main__":\n    $1',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '엔트리 포인트',
+              range,
+            },
+          ];
+
+        case 'html':
+          return [
+            {
+              label: 'html',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>$1</title>\n</head>\n<body>\n  $2\n</body>\n</html>`,
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '기본 HTML 구조',
+              range,
+            },
+            {
+              label: 'div',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '<div>$1</div>',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: 'div 태그',
+              range,
+            },
+          ];
+
+        case 'css':
+          return [
+            {
+              label: 'center-flex',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: 'display: flex;\njustify-content: center;\nalign-items: center;',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: '가운데 정렬 flexbox',
+              range,
+            },
+          ];
+
+        default:
+          return [];
+      }
+    };
 
     useEffect(() => {
       const currentTab = openTabs.find(tab => `${tab.file.path}/${tab.file.name}` === activeFile);
