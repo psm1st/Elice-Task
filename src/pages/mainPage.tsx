@@ -12,7 +12,7 @@ import EliceLogo from '../assets/EliceLogo.png';
 const MainPage = () => {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filesMap, setFilesMap] = useState<Map<string, string>>(new Map());
+  const [filesMap, setFilesMap] = useState<Map<string, Blob>>(new Map());
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
 
   const handleUpload = async (file: File) => {
@@ -20,7 +20,7 @@ const MainPage = () => {
     const tree = buildTree(entries);
     setTree(tree);
 
-    const newMap = new Map<string, string>();
+    const newMap = new Map<string, Blob>();
     for (const entry of entries) {
       if (!entry.isDirectory && entry.content !== undefined) {
         const fileName = entry.name.split('/').filter(Boolean).pop()!;
@@ -34,8 +34,8 @@ const MainPage = () => {
     setSelectedFile(file);
   };
 
-  const getFileContent = async (fileName: string) => {
-    return filesMap.get(fileName) || '';
+  const getFileContent = async (fileName: string): Promise<Blob | undefined> => {
+    return filesMap.get(fileName);
   };
 
   return (
