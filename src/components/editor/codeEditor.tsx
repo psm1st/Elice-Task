@@ -1,132 +1,214 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import * as monaco from 'monaco-editor';
 import styled from 'styled-components';
 import { FileNode } from '../../types/FileNode';
+import cancelIcon from '../../assets/cancel.png';
+import cancelWhiteIcon from '../../assets/cancelWhite.png';
+import dotIcon from '../../assets/dot.png';
 
 interface OpenFile {
   file: FileNode;
   content: Blob;
+  modified?: boolean;
+}
+
+export interface CodeEditorRef {
+  getOpenTabs: () => OpenFile[];
 }
 
 interface Props {
   files: FileNode[];
   onSelectFileContent: (fileName: string) => Promise<Blob | undefined>;
   selectedFile: FileNode | null;
+  onActiveFileChange?: (file: FileNode | null) => void;
+  originalZipName?: string;
+  onFileSave?: (fileName: string, content: Blob) => void;
 }
 
-const CodeEditor: React.FC<Props> = ({ onSelectFileContent, selectedFile }) => {
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
-  const [activeFile, setActiveFile] = useState<string | null>(null);
+const CodeEditor = forwardRef<CodeEditorRef, Props>(
+  ({ onSelectFileContent, selectedFile, onActiveFileChange, onFileSave }, ref) => {
+    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [openTabs, setOpenTabs] = useState<OpenFile[]>([]);
+    const [activeFile, setActiveFile] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (containerRef.current && !editorRef.current) {
-      editorRef.current = monaco.editor.create(containerRef.current, {
-        value: '',
-        language: 'plaintext',
-        theme: 'vs-light',
-        automaticLayout: true,
-      });
-    }
-  }, []);
+    useImperativeHandle(ref, () => ({
+      getOpenTabs: () => openTabs,
+    }));
 
-  useEffect(() => {
-    const currentTab = openTabs.find(tab => tab.file.name === activeFile);
-    if (!editorRef.current || !currentTab) return;
-
-    const fileName = currentTab.file.name.toLowerCase();
-    const isTextFile =
-      /\.(ts|tsx|js|jsx|json|md|txt|html|css|scss|xml|csv|py|java|c|cpp|sh)$/i.test(fileName);
-
-    monaco.editor.getModels().forEach(model => model.dispose());
-
-    if (isTextFile) {
-      currentTab.content.text().then(text => {
-        const model = monaco.editor.createModel(text, getLanguage(fileName));
-        editorRef.current!.setModel(model);
-        editorRef.current!.updateOptions({
-          readOnly: currentTab.file.isEditable === false,
+    useEffect(() => {
+      if (containerRef.current && !editorRef.current) {
+        editorRef.current = monaco.editor.create(containerRef.current, {
+          value: '',
+          language: 'plaintext',
+          theme: 'vs-light',
+          automaticLayout: true,
         });
+      }
+    }, []);
+
+    useEffect(() => {
+      const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+      if (!editorRef.current || !currentTab) return;
+
+      const fileName = currentTab.file.name.toLowerCase();
+      const isTextFile =
+        /\.(ts|tsx|js|jsx|json|md|txt|html|css|scss|xml|csv|py|java|c|cpp|sh)$/i.test(fileName);
+
+      if (isTextFile) {
+        const uri = monaco.Uri.parse(`file:///${currentTab.file.name}`);
+        let model = monaco.editor.getModel(uri);
+
+        if (!model) {
+          currentTab.content.text().then(text => {
+            model = monaco.editor.createModel(text, getLanguage(fileName), uri);
+            editorRef.current!.setModel(model!);
+            editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
+
+            model!.onDidChangeContent(() => {
+              setOpenTabs(prevTabs =>
+                prevTabs.map(tab =>
+                  tab.file.name === currentTab.file.name ? { ...tab, modified: true } : tab
+                )
+              );
+            });
+          });
+        } else {
+          editorRef.current.setModel(model);
+          editorRef.current.updateOptions({ readOnly: currentTab.file.isEditable === false });
+        }
+      }
+    }, [activeFile]);
+
+    useEffect(() => {
+      const handler = (e: KeyboardEvent) => {
+        if (e.metaKey && e.key === 's') {
+          e.preventDefault();
+          const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+          if (!currentTab || !editorRef.current) return;
+          const model = editorRef.current.getModel();
+          const text = model?.getValue();
+          if (text) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            setOpenTabs(prevTabs =>
+              prevTabs.map(tab =>
+                tab.file.name === currentTab.file.name
+                  ? { ...tab, content: blob, modified: false }
+                  : tab
+              )
+            );
+            onFileSave?.(currentTab.file.name, blob);
+          }
+        }
+      };
+      window.addEventListener('keydown', handler);
+      return () => window.removeEventListener('keydown', handler);
+    }, [openTabs, activeFile]);
+
+    useEffect(() => {
+      if (selectedFile && !selectedFile.isDirectory) {
+        openFile(selectedFile);
+      }
+    }, [selectedFile]);
+
+    const openFile = async (file: FileNode) => {
+      const existingTab = openTabs.find(tab => tab.file.name === file.name);
+      if (!existingTab) {
+        const content = await onSelectFileContent(file.name);
+        if (!content) return;
+        const newTab: OpenFile = { file, content, modified: false };
+        setOpenTabs(prev => [...prev, newTab]);
+      }
+      setActiveFile(file.name);
+      onActiveFileChange?.(file);
+    };
+
+    const closeTab = (fileName: string) => {
+      setOpenTabs(prev => {
+        const newTabs = prev.filter(tab => tab.file.name !== fileName);
+        if (activeFile === fileName) {
+          const nextTab = newTabs[newTabs.length - 1] || null;
+          setActiveFile(nextTab?.file.name || null);
+          onActiveFileChange?.(nextTab?.file || null);
+        }
+        return newTabs;
       });
-    } else {
-      editorRef.current.setModel(null);
-    }
-  }, [activeFile, openTabs]);
+    };
 
-  useEffect(() => {
-    if (selectedFile && !selectedFile.isDirectory) {
-      openFile(selectedFile);
-    }
-  }, [selectedFile]);
+    const getShortenedName = (fileName: string) => {
+      const dotIndex = fileName.lastIndexOf('.');
+      if (dotIndex === -1 || fileName.length <= 27) return fileName;
+      const base = fileName.slice(0, dotIndex);
+      const ext = fileName.slice(dotIndex);
+      const baseTrimmed = base.length > 16 ? `${base.slice(0, 14)}...${base.slice(-1)}` : base;
+      return `${baseTrimmed}${ext}`;
+    };
 
-  const openFile = async (file: FileNode) => {
-    const existingTab = openTabs.find(tab => tab.file.name === file.name);
-    if (!existingTab) {
-      const content = await onSelectFileContent(file.name);
-      if (!content) return;
-      const newTab: OpenFile = { file, content };
-      setOpenTabs(prev => [...prev, newTab]);
-    }
-    setActiveFile(file.name);
-  };
+    const getLanguage = (fileName: string) => {
+      if (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) return 'typescript';
+      if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) return 'javascript';
+      if (fileName.endsWith('.json')) return 'json';
+      if (fileName.endsWith('.md')) return 'markdown';
+      if (fileName.endsWith('.html')) return 'html';
+      if (fileName.endsWith('.css') || fileName.endsWith('.scss')) return 'css';
+      if (fileName.endsWith('.py')) return 'python';
+      if (fileName.endsWith('.java')) return 'java';
+      if (fileName.endsWith('.c') || fileName.endsWith('.cpp')) return 'cpp';
+      if (fileName.endsWith('.sh')) return 'shell';
+      return 'plaintext';
+    };
 
-  const getShortenedName = (fileName: string) => {
-    const dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex === -1 || fileName.length <= 27) return fileName;
-    const base = fileName.slice(0, dotIndex);
-    const ext = fileName.slice(dotIndex);
-    const baseTrimmed = base.length > 16 ? `${base.slice(0, 14)}...${base.slice(-1)}` : base;
-    return `${baseTrimmed}${ext}`;
-  };
+    const currentTab = openTabs.find(tab => tab.file.name === activeFile);
+    const fileName = currentTab?.file.name.toLowerCase() || '';
+    const isImage = currentTab && /\.(png|jpe?g|gif|bmp|webp)$/i.test(fileName);
+    const isPDF = currentTab && fileName.endsWith('.pdf');
+    const url = currentTab ? URL.createObjectURL(currentTab.content) : '';
 
-  const getLanguage = (fileName: string) => {
-    if (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) return 'typescript';
-    if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) return 'javascript';
-    if (fileName.endsWith('.json')) return 'json';
-    if (fileName.endsWith('.md')) return 'markdown';
-    if (fileName.endsWith('.html')) return 'html';
-    if (fileName.endsWith('.css') || fileName.endsWith('.scss')) return 'css';
-    if (fileName.endsWith('.py')) return 'python';
-    if (fileName.endsWith('.java')) return 'java';
-    if (fileName.endsWith('.c') || fileName.endsWith('.cpp')) return 'cpp';
-    if (fileName.endsWith('.sh')) return 'shell';
-    return 'plaintext';
-  };
+    return (
+      <EditorContainer>
+        <Tabs>
+          {openTabs.map(tab => {
+            const isActive = tab.file.name === activeFile;
+            return (
+              <Tab
+                key={tab.file.name}
+                active={isActive}
+                onClick={() => {
+                  setActiveFile(tab.file.name);
+                  onActiveFileChange?.(tab.file);
+                }}
+                title={tab.file.name}
+              >
+                {getShortenedName(tab.file.name)}
+                {tab.modified ? (
+                  <CloseIcon src={dotIcon} alt="modified" />
+                ) : (
+                  <CloseIcon
+                    src={isActive ? cancelWhiteIcon : cancelIcon}
+                    alt="close"
+                    onClick={e => {
+                      e.stopPropagation();
+                      closeTab(tab.file.name);
+                    }}
+                  />
+                )}
+              </Tab>
+            );
+          })}
+        </Tabs>
 
-  const currentTab = openTabs.find(tab => tab.file.name === activeFile);
-  const fileName = currentTab?.file.name.toLowerCase() || '';
-  const isImage = currentTab && /\.(png|jpe?g|gif|bmp|webp)$/i.test(fileName);
-  const isPDF = currentTab && fileName.endsWith('.pdf');
-
-  const url = currentTab ? URL.createObjectURL(currentTab.content) : '';
-
-  return (
-    <EditorContainer>
-      <Tabs>
-        {openTabs.map(tab => (
-          <Tab
-            key={tab.file.name}
-            active={tab.file.name === activeFile}
-            onClick={() => setActiveFile(tab.file.name)}
-            title={tab.file.name}
-          >
-            {getShortenedName(tab.file.name)}
-          </Tab>
-        ))}
-      </Tabs>
-
-      <EditorBox ref={containerRef}>
-        {(isImage || isPDF) && (
-          <ViewerOverlay>
-            {isImage && <img src={url} alt={fileName} />}
-            {isPDF && <iframe src={url} title={fileName} width="100%" height="100%" />}
-          </ViewerOverlay>
-        )}
-      </EditorBox>
-    </EditorContainer>
-  );
-};
+        <EditorBox ref={containerRef}>
+          {(isImage || isPDF) && (
+            <ViewerOverlay>
+              {isImage && <img src={url} alt={fileName} />}
+              {isPDF && <iframe src={url} title={fileName} width="100%" height="100%" />}
+            </ViewerOverlay>
+          )}
+        </EditorBox>
+      </EditorContainer>
+    );
+  }
+);
 
 export default CodeEditor;
 
@@ -142,7 +224,7 @@ const Tabs = styled.div`
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
   gap: 10px;
-  margin-top: 25px;
+  margin-top: 10px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
@@ -157,6 +239,16 @@ const Tab = styled.div<{ active: boolean }>`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const CloseIcon = styled.img`
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  cursor: pointer;
 `;
 
 const EditorBox = styled.div`
@@ -169,11 +261,12 @@ const EditorBox = styled.div`
 const ViewerOverlay = styled.div`
   position: absolute;
   inset: 0;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
+  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px;
+  padding: 0;
 
   img,
   iframe {
