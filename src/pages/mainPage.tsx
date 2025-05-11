@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styled from 'styled-components';
 import UploadButtons from '../components/upload/UploadButtons';
 import UploadAreaModal from '../components/upload/uploadAreaModal';
 import FileTree from '../components/fileTree/FileTree';
-import CodeEditor from '../components/editor/codeEditor';
+import CodeEditor, { CodeEditorRef } from '../components/editor/codeEditor';
 import { FileNode } from '../types/FileNode';
 import { parseZipFile } from '../components/upload/parseZipFile';
 import { buildTree } from '../components/fileTree/buildTree';
 import EliceLogo from '../assets/EliceLogo.png';
+
 const MainPage = () => {
   const [tree, setTree] = useState<FileNode[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filesMap, setFilesMap] = useState<Map<string, Blob>>(new Map());
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [originalZipName, setOriginalZipName] = useState<string>('uploaded');
-  const [originalFileMap, setOriginalFileMap] = useState<Map<string, Blob>>(new Map());
+  const [fileRefreshKey, setFileRefreshKey] = useState<number>(0);
+  const codeEditorRef = useRef<CodeEditorRef>(null);
 
   const handleUpload = async (file: File) => {
     const entries = await parseZipFile(file);
@@ -25,20 +27,20 @@ const MainPage = () => {
     const newMap = new Map<string, Blob>();
     for (const entry of entries) {
       if (!entry.isDirectory && entry.content !== undefined) {
-        const fileName = entry.name.split('/').filter(Boolean).pop()!;
-        newMap.set(fileName, entry.content);
+        newMap.set(entry.name, entry.content);
       }
     }
     setFilesMap(newMap);
-    setOriginalFileMap(newMap);
+    setSelectedFile(null);
+    setFileRefreshKey(prev => prev + 1);
   };
 
   const handleFileClick = (file: FileNode) => {
     setSelectedFile(file);
   };
 
-  const getFileContent = async (fileName: string): Promise<Blob | undefined> => {
-    return filesMap.get(fileName);
+  const getFileContent = async (filePath: string): Promise<Blob | undefined> => {
+    return filesMap.get(filePath);
   };
 
   return (
@@ -49,11 +51,8 @@ const MainPage = () => {
         </LogoSection>
         <UploadButtons
           onUploadClick={() => setIsModalOpen(true)}
-          originalZipName={originalZipName}
-          originalFileMap={originalFileMap}
-          modifiedFileMap={filesMap}
+          onDownloadClick={() => codeEditorRef.current?.downloadZip(originalZipName)}
         />
-
         {isModalOpen && (
           <UploadAreaModal onUpload={handleUpload} onClose={() => setIsModalOpen(false)} />
         )}
@@ -65,13 +64,21 @@ const MainPage = () => {
           onFileClick={handleFileClick}
           selectedFileName={selectedFile?.name}
         />
-        <EditorBox>
+        <EditorBox key={fileRefreshKey}>
           <CodeEditor
+            ref={codeEditorRef}
             files={tree}
             onSelectFileContent={getFileContent}
             selectedFile={selectedFile}
             onActiveFileChange={setSelectedFile}
             originalZipName={originalZipName}
+            onFileSave={(filePath, blob) => {
+              setFilesMap(prev => {
+                const newMap = new Map(prev);
+                newMap.set(filePath, blob);
+                return newMap;
+              });
+            }}
           />
         </EditorBox>
       </Layout>

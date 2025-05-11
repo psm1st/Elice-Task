@@ -4,4 +4,5 @@ export interface FileNode {
   children?: FileNode[];
   isBinary?: boolean;
   isEditable?: boolean;
+  path: string;
 }
