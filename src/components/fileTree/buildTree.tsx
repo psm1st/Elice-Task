@@ -1,4 +1,4 @@
-import { ZipEntry } from '../upload/parseZipFile';
+import { ZipEntry } from '../../types/parseZipFile';
 import { FileNode } from '../../types/FileNode';
 
 const binaryExtensions = [

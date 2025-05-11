@@ -5,7 +5,7 @@ import UploadAreaModal from '../components/upload/uploadAreaModal';
 import FileTree from '../components/fileTree/FileTree';
 import CodeEditor, { CodeEditorRef } from '../components/editor/codeEditor';
 import { FileNode } from '../types/FileNode';
-import { parseZipFile } from '../components/upload/parseZipFile';
+import { parseZipFile } from '../types/parseZipFile';
 import { buildTree } from '../components/fileTree/buildTree';
 import EliceLogo from '../assets/EliceLogo.png';
 
