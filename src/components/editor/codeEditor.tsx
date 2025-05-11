@@ -50,9 +50,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
                 tab => `${tab.file.path}/${tab.file.name}` === fullPath
               );
               let blob = openTab?.content || filesMapRef.current.get(fullPath);
-              if (!blob) {
-                blob = await onSelectFileContent(fullPath);
-              }
+              if (!blob) blob = await onSelectFileContent(fullPath);
               if (blob) zip.file(fullPath, blob);
             }
           }
@@ -81,7 +79,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
       const fileName = currentTab.file.name.toLowerCase();
       const isTextFile =
         /\.(ts|tsx|js|jsx|json|md|txt|html|css|scss|xml|csv|py|java|c|cpp|sh)$/i.test(fileName);
-
       if (isTextFile) {
         const uri = monaco.Uri.parse(`file:///${activeFile}`);
         let model = monaco.editor.getModel(uri);
@@ -90,7 +87,7 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           currentTab.content.text().then(text => {
             requestIdleCallback(() => {
               model = monaco.editor.createModel(text, getLanguage(fileName), uri);
-              editorRef.current!.setModel(model!);
+              editorRef.current!.setModel(model);
               editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
 
               model!.onDidChangeContent(() => {
@@ -108,6 +105,16 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           requestIdleCallback(() => {
             editorRef.current!.setModel(model!);
             editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
+
+            model!.onDidChangeContent(() => {
+              setOpenTabs(prevTabs =>
+                prevTabs.map(tab =>
+                  `${tab.file.path}/${tab.file.name}` === activeFile
+                    ? { ...tab, modified: true }
+                    : tab
+                )
+              );
+            });
           });
         }
       }
@@ -141,15 +148,12 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           editorRef.current?.trigger('keyboard', 'redo', null);
         }
       };
-
       window.addEventListener('keydown', handler);
       return () => window.removeEventListener('keydown', handler);
     }, [openTabs, activeFile]);
 
     useEffect(() => {
-      if (selectedFile && !selectedFile.isDirectory) {
-        openFile(selectedFile);
-      }
+      if (selectedFile && !selectedFile.isDirectory) openFile(selectedFile);
     }, [selectedFile]);
 
     const openFile = async (file: FileNode) => {
@@ -240,7 +244,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
             );
           })}
         </Tabs>
-
         <EditorBox ref={containerRef}>
           {(isImage || isPDF) && (
             <ViewerOverlay>
