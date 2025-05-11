@@ -69,6 +69,13 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           theme: 'vs-light',
           automaticLayout: true,
         });
+
+        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+          target: monaco.languages.typescript.ScriptTarget.ES2020,
+          allowNonTsExtensions: true,
+        });
+
+        monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
       }
     }, []);
 
@@ -89,7 +96,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
               model = monaco.editor.createModel(text, getLanguage(fileName), uri);
               editorRef.current!.setModel(model);
               editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
-
               model!.onDidChangeContent(() => {
                 setOpenTabs(prevTabs =>
                   prevTabs.map(tab =>
@@ -105,7 +111,6 @@ const CodeEditor = forwardRef<CodeEditorRef, Props>(
           requestIdleCallback(() => {
             editorRef.current!.setModel(model!);
             editorRef.current!.updateOptions({ readOnly: currentTab.file.isEditable === false });
-
             model!.onDidChangeContent(() => {
               setOpenTabs(prevTabs =>
                 prevTabs.map(tab =>
