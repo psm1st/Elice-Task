@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import * as monaco from 'monaco-editor';
 import styled from 'styled-components';
 import { FileNode } from '../../types/FileNode';
@@ -261,11 +261,13 @@ const EditorBox = styled.div`
 const ViewerOverlay = styled.div`
   position: absolute;
   inset: 0;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
+  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px;
+  padding: 0;
+
   img,
   iframe {
     max-width: 100%;
