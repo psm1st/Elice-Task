@@ -22,7 +22,7 @@
 <br />
 
 ### 화면 구성
-|화면 명|
+|Elice Code Editor|
 |:---:|
 |<img width="1505" alt="스크린샷 2025-05-11 오후 9 29 41" src="https://github.com/user-attachments/assets/e3f1fcf5-dad9-42fe-8887-87868a52c0f1" />
 |
